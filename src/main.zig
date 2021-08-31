@@ -14,7 +14,7 @@ pub fn main() anyerror!void {
     var info = List([][]const u8).init(alloc);
     defer info.deinit();
 
-    var home = string.tokenize(u8, os.getenv("HOME").?, fs.path.sep_str);
+    var home = mem.tokenize(u8, os.getenv("HOME").?, fs.path.sep_str);
     var username: []const u8 = undefined;
     while (true) {
         username = home.next() orelse break;
@@ -23,7 +23,7 @@ pub fn main() anyerror!void {
     var buf: [os.HOST_NAME_MAX]u8 = undefined;
     const hostname = try os.gethostname(&buf);
 
-    const user_at_host = try string.concat(alloc, u8, &[_][]const u8{ username, " @ ", hostname });
+    const user_at_host = try mem.concat(alloc, u8, &[_][]const u8{ username, " @ ", hostname });
     defer alloc.free(user_at_host);
     try info.append(&[_][]const u8{ user_at_host, "[user]" });
 
