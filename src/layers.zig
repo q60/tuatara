@@ -1,16 +1,16 @@
 usingnamespace @import("env.zig");
-const util = @import("util.zig");
+const fileExists = @import("util.zig").fileExists;
 
-pub fn osName(allocator: *mem.Allocator) ![]const u8 {
+pub fn osname(allocator: *mem.Allocator) ![]const u8 {
     var file: fs.File = undefined;
     var os_name_prefix: []const u8 = undefined;
 
-    if (util.fileExists("/etc/lsb-release")) {
+    if (fileExists("/etc/lsb-release")) {
         file = fs.openFileAbsolute("/etc/lsb-release", .{ .read = true }) catch unreachable;
         os_name_prefix =
             \\DISTRIB_DESCRIPTION="
         ;
-    } else if (util.fileExists("/etc/os-release")) {
+    } else if (fileExists("/etc/os-release")) {
         file = fs.openFileAbsolute("/etc/os-release", .{ .read = true }) catch unreachable;
         os_name_prefix =
             \\PRETTY_NAME="
