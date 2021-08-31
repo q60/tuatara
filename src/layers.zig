@@ -1,18 +1,28 @@
 usingnamespace @import("env.zig");
+const util = @import("util.zig");
 
 pub fn osName(allocator: *mem.Allocator) ![]const u8 {
-    const file = fs.openFileAbsolute("/etc/os-release", .{ .read = true }) catch {
-        return "unknown";
-    };
+    var file: fs.File = undefined;
+    var os_name_prefix: []const u8 = undefined;
+
+    if (util.fileExists("/etc/lsb-release")) {
+        file = fs.openFileAbsolute("/etc/lsb-release", .{ .read = true }) catch unreachable;
+        os_name_prefix =
+            \\DISTRIB_DESCRIPTION="
+        ;
+    } else if (util.fileExists("/etc/os-release")) {
+        file = fs.openFileAbsolute("/etc/os-release", .{ .read = true }) catch unreachable;
+        os_name_prefix =
+            \\PRETTY_NAME="
+        ;
+    }
 
     const file_read = try file.readToEndAlloc(allocator, 0x200);
+    file.close();
     defer allocator.free(file_read);
 
     var lines = mem.tokenize(u8, file_read, "\n");
     var os_name: []const u8 = undefined;
-    const os_name_prefix =
-        \\PRETTY_NAME="
-    ;
     while (true) {
         var line = lines.next() orelse break;
         if (mem.startsWith(u8, line, os_name_prefix)) {
