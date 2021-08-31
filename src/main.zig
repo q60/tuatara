@@ -2,7 +2,6 @@ usingnamespace @import("env.zig");
 
 const layers = @import("layers.zig");
 const builtin = @import("builtin");
-const List = std.ArrayList;
 
 pub fn main() anyerror!void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -23,7 +22,7 @@ pub fn main() anyerror!void {
     var buf: [os.HOST_NAME_MAX]u8 = undefined;
     const hostname = try os.gethostname(&buf);
 
-    const os_name = try layers.osName(alloc);
+    const os_name = try layers.osname(alloc);
     defer alloc.free(os_name);
     try info.append(&[_][]const u8{ os_name, "[os]" });
 
