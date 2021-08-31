@@ -1,9 +1,7 @@
 usingnamespace @import("env.zig");
 
 pub fn fileExists(absolute_path: []const u8) bool {
-    const file = fs.openFileAbsolute(absolute_path, .{ .read = true }) catch {
-        return false;
-    };
+    const file = fs.openFileAbsolute(absolute_path, .{ .read = true }) catch return false;
     file.close();
     return true;
 }
