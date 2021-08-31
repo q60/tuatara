@@ -23,16 +23,14 @@ pub fn main() anyerror!void {
     var buf: [os.HOST_NAME_MAX]u8 = undefined;
     const hostname = try os.gethostname(&buf);
 
-    const user_at_host = try mem.concat(alloc, u8, &[_][]const u8{ username, " @ ", hostname });
-    defer alloc.free(user_at_host);
-    try info.append(&[_][]const u8{ user_at_host, "[user]" });
-
     const os_name = try layers.osName(alloc);
     defer alloc.free(os_name);
     try info.append(&[_][]const u8{ os_name, "[os]" });
 
     const arch = builtin.cpu.arch;
     try info.append(&[_][]const u8{ std.meta.tagName(arch), "[arch]" });
+
+    print("{s:>11} @ {s}\n", .{ username, hostname });
     for (info.items) |layer| {
         print("{s:>12} ", .{layer[0]});
         print("{s}\n", .{layer[1]});
