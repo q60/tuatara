@@ -1,6 +1,7 @@
 usingnamespace @import("env.zig");
 
 const layers = @import("layers.zig");
+const indented = @import("util.zig").rightAlign;
 const builtin = @import("builtin");
 
 pub fn main() anyerror!void {
@@ -24,14 +25,38 @@ pub fn main() anyerror!void {
 
     const os_name = try layers.osname(alloc);
     defer alloc.free(os_name);
-    try info.append(&[_][]const u8{ os_name, "[os]" });
+
+    const os_name_upper = try std.ascii.allocUpperString(alloc, os_name);
+    defer alloc.free(os_name_upper);
+    try info.append(&[_][]const u8{ os_name_upper, "[os]" });
+
+    const kernel_ver = try layers.kernel(alloc);
+    defer alloc.free(kernel_ver);
+    try info.append(&[_][]const u8{ kernel_ver, "[kernel]" });
 
     const arch = builtin.cpu.arch;
     try info.append(&[_][]const u8{ std.meta.tagName(arch), "[arch]" });
 
-    print("{s:>11} @ {s}\n", .{ username, hostname });
+    const uptime = try layers.uptime(alloc);
+    defer alloc.free(uptime);
+    try info.append(&[_][]const u8{ uptime, "[uptime]" });
+
+    var max_length: usize = 0;
     for (info.items) |layer| {
-        print("{s:>12} ", .{layer[0]});
+        var current_len = layer[0].len;
+        if (current_len > max_length) {
+            max_length = layer[0].len;
+        }
+    }
+
+    const user_indent = try indented(alloc, max_length - username.len + 1);
+    defer alloc.free(user_indent);
+
+    print("{s}{s} @ {s}\n", .{ user_indent, username, hostname });
+    for (info.items) |layer| {
+        const layer_indent = try indented(alloc, max_length - layer[0].len + 1);
+        defer alloc.free(layer_indent);
+        print("{s}{s} | ", .{ layer_indent, layer[0] });
         print("{s}\n", .{layer[1]});
     }
 }
