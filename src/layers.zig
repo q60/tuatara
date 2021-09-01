@@ -31,10 +31,9 @@ pub fn osname(allocator: *mem.Allocator) ![]const u8 {
         }
     }
 
-    const res = try allocator.alloc(u8, os_name.len);
+    const res = try allocator.dupe(u8, os_name);
     errdefer allocator.free(res);
 
-    mem.copy(u8, res, os_name);
     return res;
 }
 
@@ -59,10 +58,9 @@ pub fn kernel(allocator: *mem.Allocator) ![]const u8 {
         }
     }
 
-    const res = try allocator.alloc(u8, kernel_ver.len);
+    const res = try allocator.dupe(u8, kernel_ver);
     errdefer allocator.free(res);
 
-    mem.copy(u8, res, kernel_ver);
     return res;
 }
 
@@ -83,9 +81,8 @@ pub fn uptime(allocator: *mem.Allocator) ![]const u8 {
     );
     defer allocator.free(formatted);
 
-    const res = try allocator.alloc(u8, formatted.len);
+    const res = try allocator.dupe(u8, formatted);
     errdefer allocator.free(res);
 
-    mem.copy(u8, res, formatted);
     return res;
 }
