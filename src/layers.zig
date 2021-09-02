@@ -65,14 +65,39 @@ pub fn kernel(allocator: *mem.Allocator) ![]const u8 {
 }
 
 pub fn uptime(allocator: *mem.Allocator) ![]const u8 {
-    const c = @cImport({
-        @cInclude("sys/sysinfo.h");
-    });
+    var file: fs.File = undefined;
+    var file_read: []const u8 = undefined;
+    var uptime_nanos: u64 = undefined;
 
-    var info: c.struct_sysinfo = undefined;
-    _ = c.sysinfo(&info);
+    if (fileExists("/proc/uptime")) {
+        file = try fs.openFileAbsolute("/proc/uptime", .{ .read = true });
+        file_read = try file.readToEndAlloc(allocator, 0x40);
 
-    var uptime_nanos: u64 = @bitCast(u64, info.uptime) * 1_000_000_000;
+        var uptime_data = mem.tokenize(u8, file_read, ".");
+        const real_uptime = uptime_data.next().?;
+        uptime_nanos =
+            (try std.fmt.parseUnsigned(u64, real_uptime, 10)) * 1_000_000_000;
+    } else if (fileExists("/proc/stat")) {
+        const epoch = @intCast(u64, @divTrunc(std.time.milliTimestamp(), 1000));
+        var btime: []const u8 = undefined;
+
+        file = try fs.openFileAbsolute("/proc/stat", .{ .read = true });
+        file_read = try file.readToEndAlloc(allocator, 0x1000);
+
+        var uptime_data = mem.tokenize(u8, file_read, "\n");
+        const prefix = "btime ";
+        while (true) {
+            var line = uptime_data.next() orelse break;
+            if (mem.startsWith(u8, line, prefix)) {
+                btime = line[prefix.len..];
+                uptime_nanos =
+                    (epoch - (try std.fmt.parseUnsigned(u64, btime, 10))) * 1_000_000_000;
+                break;
+            }
+        }
+    }
+    file.close();
+    defer allocator.free(file_read);
 
     const formatted = try std.fmt.allocPrint(
         allocator,
