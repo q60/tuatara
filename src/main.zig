@@ -12,8 +12,14 @@ pub fn main() anyerror!void {
     }
 
     // layers list
-    var info = List([][]const u8).init(alloc);
-    defer info.deinit();
+    var info = List([]const []const u8).init(alloc);
+    defer {
+        for (info.items) |item| {
+            for (item) |v|
+                alloc.free(v);
+        }
+        info.deinit();
+    }
 
     // temporary solution
     const blue = "\x1B[34m\x1B[1m";
@@ -31,31 +37,30 @@ pub fn main() anyerror!void {
     const hostname = try os.gethostname(&buf);
 
     // OS layer
-    const os_name = try layers.osname(alloc);
-    defer alloc.free(os_name);
-    const os_name_upper = try std.ascii.allocUpperString(alloc, os_name);
-    defer alloc.free(os_name_upper);
-    try info.append(&[_][]const u8{ os_name_upper, "[os]" });
+    if (layers.osname(alloc)) |os_name| {
+        defer alloc.free(os_name);
+        const os_name_upper = try std.ascii.allocUpperString(alloc, os_name);
+        try info.append(&[_][]const u8{ os_name_upper, try alloc.dupe(u8, "[os]") });
+    } else |_| {}
 
     // kernel layer
-    const kernel_ver = try layers.kernel(alloc);
-    defer alloc.free(kernel_ver);
-    const kernel_ver_upper = try std.ascii.allocUpperString(alloc, kernel_ver);
-    defer alloc.free(kernel_ver_upper);
-    try info.append(&[_][]const u8{ kernel_ver_upper, "[kernel]" });
+    if (layers.kernel(alloc)) |kernel_ver| {
+        defer alloc.free(kernel_ver);
+        const kernel_ver_upper = try std.ascii.allocUpperString(alloc, kernel_ver);
+        try info.append(&[_][]const u8{ kernel_ver_upper, try alloc.dupe(u8, "[kernel]") });
+    } else |_| {}
 
     // arch layer
     const arch = std.meta.tagName(builtin.cpu.arch);
     const arch_upper = try std.ascii.allocUpperString(alloc, arch);
-    defer alloc.free(arch_upper);
-    try info.append(&[_][]const u8{ arch_upper, "[arch]" });
+    try info.append(&[_][]const u8{ arch_upper, try alloc.dupe(u8, "[arch]") });
 
     // uptime layer
-    const uptime = try layers.uptime(alloc);
-    defer alloc.free(uptime);
-    const uptime_upper = try std.ascii.allocUpperString(alloc, uptime);
-    defer alloc.free(uptime_upper);
-    try info.append(&[_][]const u8{ uptime_upper, "[uptime]" });
+    if (layers.uptime(alloc)) |uptime| {
+        defer alloc.free(uptime);
+        const uptime_upper = try std.ascii.allocUpperString(alloc, uptime);
+        try info.append(&[_][]const u8{ uptime_upper, try alloc.dupe(u8, "[uptime]") });
+    } else |_| {}
 
     // getting length of the longest layer
     var max_length: usize = 0;
