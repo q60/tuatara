@@ -96,6 +96,7 @@ pub fn uptime(allocator: *mem.Allocator) ![]const u8 {
             }
         }
     }
+
     file.close();
     defer allocator.free(file_read);
 
