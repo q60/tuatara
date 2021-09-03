@@ -4,7 +4,7 @@ const layers = @import("layers.zig");
 const indented = @import("util.zig").rightAlign;
 const builtin = @import("builtin");
 
-pub fn main() anyerror!void {
+pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const alloc = &gpa.allocator;
     defer {
@@ -71,16 +71,16 @@ pub fn main() anyerror!void {
         }
     }
 
-    // print out user@host
+    // try print out user@host
     const user_indent = try indented(alloc, max_length - username.len + 1);
     defer alloc.free(user_indent);
-    print("{s}{s}{s}{s} @ {s}{s}{s}\n", .{ user_indent, blue, username, reset, blue, hostname, reset });
+    try print("{s}{s}{s}{s} @ {s}{s}{s}\n", .{ user_indent, blue, username, reset, blue, hostname, reset });
 
-    // print layers
+    // try print layers
     for (info.items) |layer| {
         const layer_indent = try indented(alloc, max_length - layer[0].len + 1);
         defer alloc.free(layer_indent);
-        print("{s}{s} {s}|{s} ", .{ layer_indent, layer[0], bold, reset });
-        print("{s}{s}{s}\n", .{ br_blue, layer[1], reset });
+        try print("{s}{s} {s}|{s} ", .{ layer_indent, layer[0], bold, reset });
+        try print("{s}{s}{s}\n", .{ br_blue, layer[1], reset });
     }
 }
