@@ -6,12 +6,18 @@ pub fn osname(allocator: *mem.Allocator) ![]const u8 {
     var os_name_prefix: []const u8 = undefined;
 
     if (fileExists("/etc/lsb-release")) {
-        file = try fs.openFileAbsolute("/etc/lsb-release", .{ .read = true });
+        file = try fs.openFileAbsolute(
+            "/etc/lsb-release",
+            .{ .read = true },
+        );
         os_name_prefix =
             \\DISTRIB_DESCRIPTION="
         ;
     } else if (fileExists("/etc/os-release")) {
-        file = try fs.openFileAbsolute("/etc/os-release", .{ .read = true });
+        file = try fs.openFileAbsolute(
+            "/etc/os-release",
+            .{ .read = true },
+        );
         os_name_prefix =
             \\PRETTY_NAME="
         ;
@@ -105,6 +111,7 @@ pub fn uptime(allocator: *mem.Allocator) ![]const u8 {
         "{}",
         .{std.fmt.fmtDuration(uptime_nanos)},
     );
+
     defer allocator.free(formatted);
 
     const res = try allocator.dupe(u8, formatted);
