@@ -7,18 +7,18 @@ const ansi = @import("resources.zig").ansi;
 const getlogo = @import("logo.zig").getlogo;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const alloc = &gpa.allocator;
+    var GPA = std.heap.GeneralPurposeAllocator(.{}){};
+    const gpa = &GPA.allocator;
     defer {
-        _ = gpa.deinit();
+        _ = GPA.deinit();
     }
 
     // layers list
-    var info = List([]const []const u8).init(alloc);
+    var info = List([]const []const u8).init(gpa);
     defer {
         for (info.items) |item| {
             for (item) |v| {
-                alloc.free(v);
+                gpa.free(v);
             }
         }
         info.deinit();
@@ -34,55 +34,55 @@ pub fn main() !void {
     const hostname = try os.gethostname(&buf);
 
     // OS layer
-    const os_struct = layers.osname(alloc);
+    const os_struct = layers.osname(gpa);
     var logo: [8][]const u8 = undefined;
     var motif: []const u8 = undefined;
     defer for (logo) |line| {
-        alloc.free(line);
+        gpa.free(line);
     };
 
     if (os_struct) |os_name| {
-        defer alloc.free(os_name.id);
-        defer alloc.free(os_name.name);
-        const os_name_upper = try std.ascii.allocUpperString(alloc, os_name.name);
+        defer gpa.free(os_name.id);
+        defer gpa.free(os_name.name);
+        const os_name_upper = try std.ascii.allocUpperString(gpa, os_name.name);
 
         try info.append(&[_][]const u8{
             os_name_upper,
-            try alloc.dupe(u8, " | [os]"),
+            try gpa.dupe(u8, " | [os]"),
         });
-        const os_id = try std.ascii.allocLowerString(alloc, os_name.id);
-        defer alloc.free(os_id);
+        const os_id = try std.ascii.allocLowerString(gpa, os_name.id);
+        defer gpa.free(os_id);
 
-        const logo_struct = try getlogo(alloc, os_id);
+        const logo_struct = try getlogo(gpa, os_id);
         logo = logo_struct.logo;
         motif = logo_struct.motif;
     } else |_| {}
 
     // kernel layer
-    if (layers.kernel(alloc)) |kernel_ver| {
-        defer alloc.free(kernel_ver);
-        const kernel_ver_upper = try std.ascii.allocUpperString(alloc, kernel_ver);
+    if (layers.kernel(gpa)) |kernel_ver| {
+        defer gpa.free(kernel_ver);
+        const kernel_ver_upper = try std.ascii.allocUpperString(gpa, kernel_ver);
         try info.append(&[_][]const u8{
             kernel_ver_upper,
-            try alloc.dupe(u8, " | [kernel]"),
+            try gpa.dupe(u8, " | [kernel]"),
         });
     } else |_| {}
 
     // arch layer
     const arch = std.meta.tagName(builtin.cpu.arch);
-    const arch_upper = try std.ascii.allocUpperString(alloc, arch);
+    const arch_upper = try std.ascii.allocUpperString(gpa, arch);
     try info.append(&[_][]const u8{
         arch_upper,
-        try alloc.dupe(u8, " | [arch]"),
+        try gpa.dupe(u8, " | [arch]"),
     });
 
     // uptime layer
-    if (layers.uptime(alloc)) |uptime| {
-        defer alloc.free(uptime);
-        const uptime_upper = try std.ascii.allocUpperString(alloc, uptime);
+    if (layers.uptime(gpa)) |uptime| {
+        defer gpa.free(uptime);
+        const uptime_upper = try std.ascii.allocUpperString(gpa, uptime);
         try info.append(&[_][]const u8{
             uptime_upper,
-            try alloc.dupe(u8, " | [uptime]"),
+            try gpa.dupe(u8, " | [uptime]"),
         });
     } else |_| {}
 
@@ -94,10 +94,10 @@ pub fn main() !void {
         while (true) {
             shell_bin = shell.next() orelse break;
         }
-        const shell_upper = try std.ascii.allocUpperString(alloc, shell_bin);
+        const shell_upper = try std.ascii.allocUpperString(gpa, shell_bin);
         try info.append(&[_][]const u8{
             shell_upper,
-            try alloc.dupe(u8, " | [shell]"),
+            try gpa.dupe(u8, " | [shell]"),
         });
     }
 
@@ -109,10 +109,10 @@ pub fn main() !void {
         while (true) {
             editor_bin = editor.next() orelse break;
         }
-        const editor_upper = try std.ascii.allocUpperString(alloc, editor_bin);
+        const editor_upper = try std.ascii.allocUpperString(gpa, editor_bin);
         try info.append(&[_][]const u8{
             editor_upper,
-            try alloc.dupe(u8, " | [editor]"),
+            try gpa.dupe(u8, " | [editor]"),
         });
     }
 
@@ -124,10 +124,10 @@ pub fn main() !void {
         while (true) {
             browser_bin = browser.next() orelse break;
         }
-        const browser_upper = try std.ascii.allocUpperString(alloc, browser_bin);
+        const browser_upper = try std.ascii.allocUpperString(gpa, browser_bin);
         try info.append(&[_][]const u8{
             browser_upper,
-            try alloc.dupe(u8, " | [browser]"),
+            try gpa.dupe(u8, " | [browser]"),
         });
     }
 
@@ -141,8 +141,8 @@ pub fn main() !void {
     }
 
     // try print out user@host
-    const user_indent = try indented(alloc, max_length - username.len + 1);
-    defer alloc.free(user_indent);
+    const user_indent = try indented(gpa, max_length - username.len + 1);
+    defer gpa.free(user_indent);
     try print("  {s}", .{
         logo[0],
     });
@@ -162,8 +162,8 @@ pub fn main() !void {
         if (index < (info.items.len)) {
             const info_layer = info.items[index][0];
             const layer_name = info.items[index][1];
-            const layer_indent = try indented(alloc, max_length - info_layer.len + 1);
-            defer alloc.free(layer_indent);
+            const layer_indent = try indented(gpa, max_length - info_layer.len + 1);
+            defer gpa.free(layer_indent);
             try print("{s}{s}", .{
                 layer_indent,
                 info_layer,
