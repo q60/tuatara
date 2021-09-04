@@ -1,15 +1,26 @@
 usingnamespace @import("env.zig");
 const fileExists = @import("util.zig").fileExists;
 
-pub fn osname(allocator: *mem.Allocator) ![]const u8 {
+const OS = struct {
+    name: []const u8,
+    id: []const u8,
+};
+
+pub fn osname(allocator: *mem.Allocator) !OS {
     var file: fs.File = undefined;
+    var os_id_prefix: []const u8 = undefined;
     var os_name_prefix: []const u8 = undefined;
+    var os_name: []const u8 = "generic";
+    var os_id: []const u8 = "generic";
 
     if (fileExists("/etc/lsb-release")) {
         file = try fs.openFileAbsolute(
             "/etc/lsb-release",
             .{ .read = true },
         );
+        os_id_prefix =
+            \\DISTRIB_ID=
+        ;
         os_name_prefix =
             \\DISTRIB_DESCRIPTION="
         ;
@@ -18,6 +29,9 @@ pub fn osname(allocator: *mem.Allocator) ![]const u8 {
             "/etc/os-release",
             .{ .read = true },
         );
+        os_id_prefix =
+            \\ID=
+        ;
         os_name_prefix =
             \\PRETTY_NAME="
         ;
@@ -28,19 +42,23 @@ pub fn osname(allocator: *mem.Allocator) ![]const u8 {
     defer allocator.free(file_read);
 
     var lines = mem.tokenize(u8, file_read, "\n");
-    var os_name: []const u8 = undefined;
     while (true) {
         var line = lines.next() orelse break;
         if (mem.startsWith(u8, line, os_name_prefix)) {
             os_name = line[os_name_prefix.len .. line.len - 1];
-            break;
+        }
+        if (mem.startsWith(u8, line, os_id_prefix)) {
+            os_id = line[os_id_prefix.len..];
         }
     }
+    // return &[2][]const u8{ os_name, os_id };
 
-    const res = try allocator.dupe(u8, os_name);
-    errdefer allocator.free(res);
+    const res1 = try allocator.dupe(u8, os_name);
+    const res2 = try allocator.dupe(u8, os_id);
+    errdefer allocator.free(res1);
+    errdefer allocator.free(res2);
 
-    return res;
+    return OS{ .name = res1, .id = res2 };
 }
 
 pub fn kernel(allocator: *mem.Allocator) ![]const u8 {
