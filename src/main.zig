@@ -3,14 +3,78 @@ usingnamespace @import("env.zig");
 const builtin = @import("builtin");
 const layers = @import("layers.zig");
 const indented = @import("util.zig").rightAlign;
-const ansi = @import("resources.zig").ansi;
 const getlogo = @import("logo.zig").getlogo;
+const res = @import("resources.zig");
+const Args = res.Args;
+const OsEnum = res.OsEnum;
+
+fn parseArgs(allocator: *mem.Allocator) !Args {
+    const args = try std.process.argsAlloc(allocator);
+    defer std.process.argsFree(allocator, args);
+    var parsed = Args{
+        .colors = true,
+        .help = false,
+        .logo = null,
+    };
+
+    for (args) |arg, i| {
+        const arg_word = std.mem.trim(u8, arg, "-");
+        if (mem.eql(u8, arg_word, "mono") or mem.eql(u8, arg_word, "m")) {
+            parsed.colors = false;
+        }
+        if (mem.eql(u8, arg_word, "help") or mem.eql(u8, arg_word, "h")) {
+            parsed.help = true;
+        }
+        if (mem.eql(u8, arg_word, "logo") or mem.eql(u8, arg_word, "l")) {
+            const os_id = try std.ascii.allocLowerString(allocator, args[i + 1]);
+            defer allocator.free(os_id);
+
+            parsed.logo = std.meta.stringToEnum(OsEnum, os_id) orelse OsEnum.generic;
+        }
+    }
+    return parsed;
+}
+
+fn help(colorset: res.Colors) !void {
+    const ansi = colorset;
+    try print(
+        \\{s}tuatara is a CLI system information tool written in Zig{s}
+        \\
+        \\{s}syntax:{s}
+        \\    tuatara {s}[options]{s}
+        \\{s}options:{s}
+        \\    {s}-h, --help{s}        {s}prints this message{s}
+        \\    {s}-l, --logo{s}        {s}sets distro logo to print{s}
+        \\    {s}-m, --mono{s}        {s}enables monochrome mode{s}
+        \\
+    ,
+        .{
+            ansi.yy, ansi.x, ansi.z,  ansi.x,
+            ansi.gg, ansi.x, ansi.z,  ansi.x,
+            ansi.gg, ansi.x, ansi.yy, ansi.x,
+            ansi.gg, ansi.x, ansi.yy, ansi.x,
+            ansi.gg, ansi.x, ansi.yy, ansi.x,
+        },
+    );
+}
 
 pub fn main() !void {
     var GPA = std.heap.GeneralPurposeAllocator(.{}){};
     const gpa = &GPA.allocator;
     defer {
         _ = GPA.deinit();
+    }
+
+    var ansi: res.Colors = res.ansi;
+
+    // argv
+    const args = try parseArgs(gpa);
+    if (!args.colors) {
+        ansi = res.mono;
+    }
+    if (args.help) {
+        try help(ansi);
+        return;
     }
 
     // layers list
@@ -50,10 +114,16 @@ pub fn main() !void {
             os_name_upper,
             try gpa.dupe(u8, " | [os]"),
         });
-        const os_id = try std.ascii.allocLowerString(gpa, os_name.id);
-        defer gpa.free(os_id);
 
-        const logo_struct = try getlogo(gpa, os_id);
+        var logo_struct: res.Logo = undefined;
+
+        if (args.logo == null) {
+            const os_id = try std.ascii.allocLowerString(gpa, os_name.id);
+            defer gpa.free(os_id);
+            logo_struct = try getlogo(gpa, os_id, ansi);
+        } else {
+            logo_struct = try getlogo(gpa, args.logo, ansi);
+        }
         logo = logo_struct.logo;
         motif = logo_struct.motif;
     } else |_| {}

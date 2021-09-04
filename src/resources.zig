@@ -1,6 +1,6 @@
 usingnamespace @import("env.zig");
 
-const Colors = struct {
+pub const Colors = struct {
     w: []const u8,
     ww: []const u8,
     r: []const u8,
@@ -42,6 +42,27 @@ pub const ansi = Colors{
     .z = "\x1B[1m",
 };
 
+pub const mono = Colors{
+    .d = "",
+    .dd = "",
+    .r = "",
+    .rr = "",
+    .g = "",
+    .gg = "",
+    .y = "",
+    .yy = "",
+    .b = "",
+    .bb = "",
+    .m = "",
+    .mm = "",
+    .c = "",
+    .cc = "",
+    .w = "",
+    .ww = "",
+    .x = "",
+    .z = "",
+};
+
 pub const Logo = struct {
     motif: []const u8,
     logo: [8][]const u8,
@@ -80,4 +101,10 @@ pub const OsEnum = enum {
     void,
     zorin,
     generic,
+};
+
+pub const Args = struct {
+    colors: bool,
+    help: bool,
+    logo: ?OsEnum,
 };

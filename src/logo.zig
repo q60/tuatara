@@ -2,11 +2,21 @@ usingnamespace @import("env.zig");
 
 const res = @import("resources.zig");
 const Logo = res.Logo;
-const ansi = res.ansi;
 const OsEnum = res.OsEnum;
 
-pub fn getlogo(allocator: *mem.Allocator, os_id: []const u8) !Logo {
-    const logo = switch (std.meta.stringToEnum(OsEnum, os_id) orelse OsEnum.generic) {
+pub fn getlogo(allocator: *mem.Allocator, os_id: anytype, colorset: res.Colors) !Logo {
+    const ansi: res.Colors = colorset;
+    var id: OsEnum = undefined;
+
+    if (@TypeOf(os_id) == []u8) {
+        id = std.meta.stringToEnum(OsEnum, os_id) orelse OsEnum.generic;
+    } else if (@TypeOf(os_id) == OsEnum) {
+        id = os_id;
+    } else {
+        id = OsEnum.generic;
+    }
+
+    const logo = switch (id) {
         .artix => Logo{
             .motif = ansi.b,
             .logo = [8][]const u8{
@@ -148,7 +158,7 @@ pub fn getlogo(allocator: *mem.Allocator, os_id: []const u8) !Logo {
                         ansi.y,  ansi.x,
                         ansi.dd, ansi.x,
                         ansi.dd, ansi.x,
-                        ansi.y,  ansi.dd,
+                        ansi.y,  ansi.x,
                     },
                 ),
             },
