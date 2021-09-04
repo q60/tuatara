@@ -6,11 +6,14 @@ tuatara
 Example
 -------
 
-|screenshot|
+|screenshot 1|
+
+|screenshot 2|
 
 ----
 
 |date|
 
-.. |screenshot| image:: https://i.imgur.com/EJAKZHZ.png
+.. |screenshot 1| image:: https://i.imgur.com/jEhiW6j.png
+.. |screenshot 2| image:: https://i.imgur.com/9vL5j9l.png
 .. |date| date:: %d.%m.%Y
