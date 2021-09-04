@@ -87,28 +87,34 @@ pub fn main() !void {
     } else |_| {}
 
     // editor layer
-    var editor = mem.tokenize(u8, os.getenv("EDITOR").?, fs.path.sep_str);
-    var editor_bin: []const u8 = undefined;
-    while (true) {
-        editor_bin = editor.next() orelse break;
+    const editor_env = os.getenv("EDITOR");
+    if (editor_env) |editor_exists| {
+        var editor = mem.tokenize(u8, editor_exists, fs.path.sep_str);
+        var editor_bin: []const u8 = undefined;
+        while (true) {
+            editor_bin = editor.next() orelse break;
+        }
+        const editor_upper = try std.ascii.allocUpperString(alloc, editor_bin);
+        try info.append(&[_][]const u8{
+            editor_upper,
+            try alloc.dupe(u8, " | [editor]"),
+        });
     }
-    const editor_upper = try std.ascii.allocUpperString(alloc, editor_bin);
-    try info.append(&[_][]const u8{
-        editor_upper,
-        try alloc.dupe(u8, " | [editor]"),
-    });
 
     // browser layer
-    var browser = mem.tokenize(u8, os.getenv("BROWSER").?, fs.path.sep_str);
-    var browser_bin: []const u8 = undefined;
-    while (true) {
-        browser_bin = browser.next() orelse break;
+    const browser_env = os.getenv("BROWSER");
+    if (browser_env) |browser_exists| {
+        var browser = mem.tokenize(u8, browser_exists, fs.path.sep_str);
+        var browser_bin: []const u8 = undefined;
+        while (true) {
+            browser_bin = browser.next() orelse break;
+        }
+        const browser_upper = try std.ascii.allocUpperString(alloc, browser_bin);
+        try info.append(&[_][]const u8{
+            browser_upper,
+            try alloc.dupe(u8, " | [browser]"),
+        });
     }
-    const browser_upper = try std.ascii.allocUpperString(alloc, browser_bin);
-    try info.append(&[_][]const u8{
-        browser_upper,
-        try alloc.dupe(u8, " | [browser]"),
-    });
 
     // getting length of the longest layer
     var max_length: usize = 0;
