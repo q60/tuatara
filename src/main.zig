@@ -86,6 +86,21 @@ pub fn main() !void {
         });
     } else |_| {}
 
+    // shell layer
+    const shell_env = os.getenv("SHELL");
+    if (shell_env) |shell_exists| {
+        var shell = mem.tokenize(u8, shell_exists, fs.path.sep_str);
+        var shell_bin: []const u8 = undefined;
+        while (true) {
+            shell_bin = shell.next() orelse break;
+        }
+        const shell_upper = try std.ascii.allocUpperString(alloc, shell_bin);
+        try info.append(&[_][]const u8{
+            shell_upper,
+            try alloc.dupe(u8, " | [shell]"),
+        });
+    }
+
     // editor layer
     const editor_env = os.getenv("EDITOR");
     if (editor_env) |editor_exists| {
