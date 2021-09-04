@@ -14,6 +14,7 @@ fn parseArgs(allocator: *mem.Allocator) !Args {
     var parsed = Args{
         .colors = true,
         .help = false,
+        .layer_names = true,
         .logo = null,
     };
 
@@ -24,6 +25,9 @@ fn parseArgs(allocator: *mem.Allocator) !Args {
         }
         if (mem.eql(u8, arg_word, "help") or mem.eql(u8, arg_word, "h")) {
             parsed.help = true;
+        }
+        if (mem.eql(u8, arg_word, "no-names") or mem.eql(u8, arg_word, "nn")) {
+            parsed.layer_names = false;
         }
         if (mem.eql(u8, arg_word, "logo") or mem.eql(u8, arg_word, "l")) {
             const os_id = try std.ascii.allocLowerString(allocator, args[i + 1]);
@@ -43,14 +47,16 @@ fn help(colorset: res.Colors) !void {
         \\{s}syntax:{s}
         \\    tuatara {s}[options]{s}
         \\{s}options:{s}
-        \\    {s}-h, --help{s}        {s}prints this message{s}
-        \\    {s}-l, --logo{s}        {s}sets distro logo to print{s}
-        \\    {s}-m, --mono{s}        {s}enables monochrome mode{s}
+        \\    {s}-h,  --help{s}        {s}prints this message{s}
+        \\    {s}-l,  --logo{s}        {s}sets distro logo to print{s}
+        \\    {s}-m,  --mono{s}        {s}enables monochrome mode{s}
+        \\    {s}-nn, --no-names{s}    {s}disables layer names{s}
         \\
     ,
         .{
             ansi.yy, ansi.x, ansi.z,  ansi.x,
             ansi.gg, ansi.x, ansi.z,  ansi.x,
+            ansi.gg, ansi.x, ansi.yy, ansi.x,
             ansi.gg, ansi.x, ansi.yy, ansi.x,
             ansi.gg, ansi.x, ansi.yy, ansi.x,
             ansi.gg, ansi.x, ansi.yy, ansi.x,
@@ -87,6 +93,20 @@ pub fn main() !void {
         }
         info.deinit();
     }
+    const layer_names = if (args.layer_names)
+        [7][]const u8{
+            " | [os]",      " | [kernel]",
+            " | [arch]",    " | [uptime]",
+            " | [shell]",   " | [editor]",
+            " | [browser]",
+        }
+    else
+        [7][]const u8{
+            " |", " |",
+            " |", " |",
+            " |", " |",
+            " |",
+        };
 
     // user@host layer
     var home = mem.tokenize(u8, os.getenv("HOME").?, fs.path.sep_str);
@@ -112,7 +132,7 @@ pub fn main() !void {
 
         try info.append(&[_][]const u8{
             os_name_upper,
-            try gpa.dupe(u8, " | [os]"),
+            try gpa.dupe(u8, layer_names[0]),
         });
 
         var logo_struct: res.Logo = undefined;
@@ -134,7 +154,7 @@ pub fn main() !void {
         const kernel_ver_upper = try std.ascii.allocUpperString(gpa, kernel_ver);
         try info.append(&[_][]const u8{
             kernel_ver_upper,
-            try gpa.dupe(u8, " | [kernel]"),
+            try gpa.dupe(u8, layer_names[1]),
         });
     } else |_| {}
 
@@ -143,7 +163,7 @@ pub fn main() !void {
     const arch_upper = try std.ascii.allocUpperString(gpa, arch);
     try info.append(&[_][]const u8{
         arch_upper,
-        try gpa.dupe(u8, " | [arch]"),
+        try gpa.dupe(u8, layer_names[2]),
     });
 
     // uptime layer
@@ -152,7 +172,7 @@ pub fn main() !void {
         const uptime_upper = try std.ascii.allocUpperString(gpa, uptime);
         try info.append(&[_][]const u8{
             uptime_upper,
-            try gpa.dupe(u8, " | [uptime]"),
+            try gpa.dupe(u8, layer_names[3]),
         });
     } else |_| {}
 
@@ -167,7 +187,7 @@ pub fn main() !void {
         const shell_upper = try std.ascii.allocUpperString(gpa, shell_bin);
         try info.append(&[_][]const u8{
             shell_upper,
-            try gpa.dupe(u8, " | [shell]"),
+            try gpa.dupe(u8, layer_names[4]),
         });
     }
 
@@ -182,7 +202,7 @@ pub fn main() !void {
         const editor_upper = try std.ascii.allocUpperString(gpa, editor_bin);
         try info.append(&[_][]const u8{
             editor_upper,
-            try gpa.dupe(u8, " | [editor]"),
+            try gpa.dupe(u8, layer_names[5]),
         });
     }
 
@@ -197,7 +217,7 @@ pub fn main() !void {
         const browser_upper = try std.ascii.allocUpperString(gpa, browser_bin);
         try info.append(&[_][]const u8{
             browser_upper,
-            try gpa.dupe(u8, " | [browser]"),
+            try gpa.dupe(u8, layer_names[6]),
         });
     }
 

@@ -106,5 +106,6 @@ pub const OsEnum = enum {
 pub const Args = struct {
     colors: bool,
     help: bool,
+    layer_names: bool,
     logo: ?OsEnum,
 };
