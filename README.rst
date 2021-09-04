@@ -12,4 +12,5 @@ Example
 
 |date|
 
-.. |screenshot| image:: https://i.imgur.com/h9lCPfT.png
+.. |screenshot| image:: https://i.imgur.com/EJAKZHZ.png
+.. |date| date:: %d.%m.%Y
