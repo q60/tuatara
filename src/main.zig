@@ -86,6 +86,18 @@ pub fn main() !void {
         });
     } else |_| {}
 
+    // browser layer
+    var browser = mem.tokenize(u8, os.getenv("BROWSER").?, fs.path.sep_str);
+    var browser_bin: []const u8 = undefined;
+    while (true) {
+        browser_bin = browser.next() orelse break;
+    }
+    const browser_upper = try std.ascii.allocUpperString(alloc, browser_bin);
+    try info.append(&[_][]const u8{
+        browser_upper,
+        try alloc.dupe(u8, " | [browser]"),
+    });
+
     // getting length of the longest layer
     var max_length: usize = 0;
     for (info.items) |layer| {
