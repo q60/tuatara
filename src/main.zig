@@ -1,9 +1,10 @@
 usingnamespace @import("env.zig");
 
+const builtin = @import("builtin");
 const layers = @import("layers.zig");
 const indented = @import("util.zig").rightAlign;
-const builtin = @import("builtin");
 const ansi = @import("resources.zig").ansi;
+const getlogo = @import("logo.zig").getlogo;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -16,8 +17,9 @@ pub fn main() !void {
     var info = List([]const []const u8).init(alloc);
     defer {
         for (info.items) |item| {
-            for (item) |v|
+            for (item) |v| {
                 alloc.free(v);
+            }
         }
         info.deinit();
     }
@@ -32,13 +34,28 @@ pub fn main() !void {
     const hostname = try os.gethostname(&buf);
 
     // OS layer
-    if (layers.osname(alloc)) |os_name| {
-        defer alloc.free(os_name);
-        const os_name_upper = try std.ascii.allocUpperString(alloc, os_name);
+    const os_struct = layers.osname(alloc);
+    var logo: [8][]const u8 = undefined;
+    var motif: []const u8 = undefined;
+    defer for (logo) |line| {
+        alloc.free(line);
+    };
+
+    if (os_struct) |os_name| {
+        defer alloc.free(os_name.id);
+        defer alloc.free(os_name.name);
+        const os_name_upper = try std.ascii.allocUpperString(alloc, os_name.name);
+
         try info.append(&[_][]const u8{
             os_name_upper,
-            try alloc.dupe(u8, "[os]"),
+            try alloc.dupe(u8, " | [os]"),
         });
+        const os_id = try std.ascii.allocLowerString(alloc, os_name.id);
+        defer alloc.free(os_id);
+
+        const logo_struct = try getlogo(alloc, os_id);
+        logo = logo_struct.logo;
+        motif = logo_struct.motif;
     } else |_| {}
 
     // kernel layer
@@ -47,7 +64,7 @@ pub fn main() !void {
         const kernel_ver_upper = try std.ascii.allocUpperString(alloc, kernel_ver);
         try info.append(&[_][]const u8{
             kernel_ver_upper,
-            try alloc.dupe(u8, "[kernel]"),
+            try alloc.dupe(u8, " | [kernel]"),
         });
     } else |_| {}
 
@@ -56,7 +73,7 @@ pub fn main() !void {
     const arch_upper = try std.ascii.allocUpperString(alloc, arch);
     try info.append(&[_][]const u8{
         arch_upper,
-        try alloc.dupe(u8, "[arch]"),
+        try alloc.dupe(u8, " | [arch]"),
     });
 
     // uptime layer
@@ -65,7 +82,7 @@ pub fn main() !void {
         const uptime_upper = try std.ascii.allocUpperString(alloc, uptime);
         try info.append(&[_][]const u8{
             uptime_upper,
-            try alloc.dupe(u8, "[uptime]"),
+            try alloc.dupe(u8, " | [uptime]"),
         });
     } else |_| {}
 
@@ -81,31 +98,37 @@ pub fn main() !void {
     // try print out user@host
     const user_indent = try indented(alloc, max_length - username.len + 1);
     defer alloc.free(user_indent);
-    try print("{s}{s}{s}{s} @ {s}{s}{s}\n", .{
-        user_indent,
-        ansi.b ++ ansi.z,
-        username,
-        ansi.x,
-        ansi.b ++ ansi.z,
-        hostname,
+    try print("  {s}", .{
+        logo[0],
+    });
+    try print("{s}{s}{s}{s}{s} @ {s}{s}{s}{s}\n", .{
+        user_indent, motif,
+        ansi.z,      username,
+        ansi.x,      motif,
+        ansi.z,      hostname,
         ansi.x,
     });
 
     // try print layers
-    for (info.items) |layer| {
-        const layer_indent = try indented(alloc, max_length - layer[0].len + 1);
-
-        defer alloc.free(layer_indent);
-        try print("{s}{s} {s}|{s} ", .{
-            layer_indent,
-            layer[0],
-            ansi.z,
-            ansi.x,
+    for (logo[1..]) |logo_line, index| {
+        try print("  {s}", .{
+            logo_line,
         });
-        try print("{s}{s}{s}\n", .{
-            ansi.bb ++ ansi.z,
-            layer[1],
-            ansi.x,
-        });
+        if (index < (info.items.len)) {
+            const info_layer = info.items[index][0];
+            const layer_name = info.items[index][1];
+            const layer_indent = try indented(alloc, max_length - info_layer.len + 1);
+            defer alloc.free(layer_indent);
+            try print("{s}{s}", .{
+                layer_indent,
+                info_layer,
+            });
+            try print("{s}{s}{s}{s}\n", .{
+                motif,      ansi.z,
+                layer_name, ansi.x,
+            });
+        } else {
+            try print("\n", .{});
+        }
     }
 }
