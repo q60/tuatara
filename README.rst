@@ -3,7 +3,7 @@ tuatara
 
 .. raw:: html
 
-    <img align="left" width="40%" src="https://i.imgur.com/vJJftrO.jpg">
+    <img align="left" width="35%" src="https://i.imgur.com/vJJftrO.jpg">
 
 **tuatara** is `ziggidy <https://github.com/ziglang/zig>`__ **\*nix** system info fetcher. WIP.
 it is descendant of `disfetch <https://github.com/q60/disfetch>`__, although sharing some common concepts and principles, they are different.
