@@ -1,5 +1,3 @@
-usingnamespace @import("env.zig");
-
 pub const Colors = struct {
     w: []const u8,
     ww: []const u8,

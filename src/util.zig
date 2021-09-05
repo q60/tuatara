@@ -1,4 +1,8 @@
-usingnamespace @import("env.zig");
+const std = @import("std");
+const mem = std.mem;
+const fs = std.fs;
+
+const List = std.ArrayList;
 
 pub fn fileExists(absolute_path: []const u8) bool {
     const file = fs.openFileAbsolute(

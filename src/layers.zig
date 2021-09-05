@@ -1,4 +1,6 @@
-usingnamespace @import("env.zig");
+const std = @import("std");
+const mem = std.mem;
+const fs = std.fs;
 const fileExists = @import("util.zig").fileExists;
 
 const OS = struct {

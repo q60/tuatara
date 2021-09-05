@@ -1,10 +1,16 @@
-usingnamespace @import("env.zig");
-
+const std = @import("std");
 const builtin = @import("builtin");
 const layers = @import("layers.zig");
 const indented = @import("util.zig").rightAlign;
 const getlogo = @import("logos.zig").getlogo;
 const res = @import("resources.zig");
+const mem = std.mem;
+const fs = std.fs;
+const os = std.os;
+const stdout = std.io.getStdOut().writer();
+const print = stdout.print;
+
+const List = std.ArrayList;
 const Args = res.Args;
 const OsEnum = res.OsEnum;
 

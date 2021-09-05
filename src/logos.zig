@@ -1,6 +1,7 @@
-usingnamespace @import("env.zig");
-
+const std = @import("std");
 const res = @import("resources.zig");
+const mem = std.mem;
+
 const Logo = res.Logo;
 const OsEnum = res.OsEnum;
 
