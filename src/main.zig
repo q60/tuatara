@@ -3,7 +3,7 @@ usingnamespace @import("env.zig");
 const builtin = @import("builtin");
 const layers = @import("layers.zig");
 const indented = @import("util.zig").rightAlign;
-const getlogo = @import("logo.zig").getlogo;
+const getlogo = @import("logos.zig").getlogo;
 const res = @import("resources.zig");
 const Args = res.Args;
 const OsEnum = res.OsEnum;
