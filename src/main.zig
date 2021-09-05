@@ -20,15 +20,25 @@ fn parseArgs(allocator: *mem.Allocator) !Args {
 
     for (args) |arg, i| {
         const arg_word = std.mem.trim(u8, arg, "-");
+
+        //* Boolean options
+        // monochrome mode
         if (mem.eql(u8, arg_word, "mono") or mem.eql(u8, arg_word, "m")) {
             parsed.colors = false;
         }
+
+        // display help message
         if (mem.eql(u8, arg_word, "help") or mem.eql(u8, arg_word, "h")) {
             parsed.help = true;
         }
+
+        // disable layer names
         if (mem.eql(u8, arg_word, "no-names") or mem.eql(u8, arg_word, "nn")) {
             parsed.layer_names = false;
         }
+
+        //* 1-arity options
+        // choose between OS logos
         if (mem.eql(u8, arg_word, "logo") or mem.eql(u8, arg_word, "l")) {
             const os_id = try std.ascii.allocLowerString(allocator, args[i + 1]);
             defer allocator.free(os_id);
