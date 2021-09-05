@@ -10,10 +10,8 @@ pub fn getlogo(allocator: *mem.Allocator, os_id: anytype, colorset: res.Colors) 
 
     if (@TypeOf(os_id) == []u8) {
         id = std.meta.stringToEnum(OsEnum, os_id) orelse OsEnum.generic;
-    } else if (@TypeOf(os_id) == OsEnum) {
-        id = os_id;
     } else {
-        id = OsEnum.generic;
+        id = os_id orelse OsEnum.generic;
     }
 
     const logo = switch (id) {
@@ -84,6 +82,52 @@ pub fn getlogo(allocator: *mem.Allocator, os_id: anytype, colorset: res.Colors) 
                         ansi.b,  ansi.bb,
                         ansi.z,  ansi.x,
                     },
+                ),
+            },
+        },
+
+        .parabola => Logo{
+            .motif = ansi.bb,
+            .logo = [8][]const u8{
+                try std.fmt.allocPrint( // 0
+                    allocator,
+                    "         {s}{s}_.__{s}   ",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 1
+                    allocator,
+                    "   {s}{s}_.,;\"[ZAMW:+{s} ",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 2
+                    allocator,
+                    "{s}{s},;\"'`       @#;:{s}",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 3
+                    allocator,
+                    "          {s}{s}.$#;/{s} ",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 4
+                    allocator,
+                    "         {s}{s},/;/{s}   ",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 5
+                    allocator,
+                    "        {s}{s}/;/{s}     ",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 6
+                    allocator,
+                    "      {s}{s};/>{s}       ",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 7
+                    allocator,
+                    "    {s}{s},/{s}          ",
+                    .{ ansi.b, ansi.z, ansi.x },
                 ),
             },
         },
