@@ -17,7 +17,7 @@ pub fn getlogo(allocator: *mem.Allocator, os_id: anytype, colorset: res.Colors) 
 
     const logo = switch (id) {
         .arch => Logo{
-            .motif = ansi.b,
+            .motif = ansi.bb,
             .logo = [8][]const u8{
                 try std.fmt.allocPrint( // 0
                     allocator,
@@ -147,6 +147,52 @@ pub fn getlogo(allocator: *mem.Allocator, os_id: anytype, colorset: res.Colors) 
                         ansi.b,  ansi.bb,
                         ansi.z,  ansi.x,
                     },
+                ),
+            },
+        },
+
+        .gentoo => Logo{
+            .motif = ansi.mm,
+            .logo = [8][]const u8{
+                try std.fmt.allocPrint( // 0
+                    allocator,
+                    "   {s}{s}.ggg.{s}     ",
+                    .{ ansi.m, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 1
+                    allocator,
+                    " {s}{s}.dGGGGG$b.{s}  ",
+                    .{ ansi.m, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 2
+                    allocator,
+                    " {s}{s}$GGG( )GGGb{s} ",
+                    .{ ansi.m, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 3
+                    allocator,
+                    " {s}{s}Q$GGGGGGGGG){s}",
+                    .{ ansi.m, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 4
+                    allocator,
+                    "   {s}{s}'GGGGGGGP{s} ",
+                    .{ ansi.m, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 5
+                    allocator,
+                    "  {s}{s}dGGGGG$P'{s}  ",
+                    .{ ansi.m, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 6
+                    allocator,
+                    "{s}{s}$$GGGG$P{s}     ",
+                    .{ ansi.m, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 7
+                    allocator,
+                    "{s}{s}`qG$$P'{s}      ",
+                    .{ ansi.m, ansi.z, ansi.x },
                 ),
             },
         },
