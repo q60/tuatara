@@ -243,6 +243,52 @@ pub fn getlogo(allocator: *mem.Allocator, os_id: anytype, colorset: res.Colors) 
             },
         },
 
+        .qubes => Logo{
+            .motif = ansi.bb,
+            .logo = [8][]const u8{
+                try std.fmt.allocPrint( // 0
+                    allocator,
+                    "     {s}{s}.<>.{s}     ",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 1
+                    allocator,
+                    "  {s}{s}.<^>''<^>.{s}  ",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 2
+                    allocator,
+                    "{s}{s}<^><      ><^>{s}",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 3
+                    allocator,
+                    "{s}{s}[:]        [:]{s}",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 4
+                    allocator,
+                    "{s}{s}[:]        [:]{s}",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 5
+                    allocator,
+                    "{s}{s}<:><      ><:>{s}",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 6
+                    allocator,
+                    "   {s}{s}<.>..<.>>{s}  ",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 7
+                    allocator,
+                    "     {s}{s}`<>`  </>{s}",
+                    .{ ansi.b, ansi.z, ansi.x },
+                ),
+            },
+        },
+
         else => Logo{
             .motif = ansi.yy,
             .logo = [8][]const u8{
