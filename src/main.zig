@@ -46,10 +46,12 @@ fn parseArgs(allocator: *mem.Allocator) !Args {
         //* 1-arity options
         // choose between OS logos
         if (mem.eql(u8, arg_word, "logo") or mem.eql(u8, arg_word, "l")) {
-            const os_id = try std.ascii.allocLowerString(allocator, args[i + 1]);
-            defer allocator.free(os_id);
+            if (args.len > i + 1) {
+                const os_id = try std.ascii.allocLowerString(allocator, args[i + 1]);
+                defer allocator.free(os_id);
 
-            parsed.logo = std.meta.stringToEnum(OsEnum, os_id) orelse OsEnum.generic;
+                parsed.logo = std.meta.stringToEnum(OsEnum, os_id) orelse OsEnum.generic;
+            }
         }
     }
     return parsed;
