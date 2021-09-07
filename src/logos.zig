@@ -16,6 +16,70 @@ pub fn getlogo(allocator: *mem.Allocator, os_id: anytype, colorset: res.Colors) 
     }
 
     const logo = switch (id) {
+        .arch => Logo{
+            .motif = ansi.b,
+            .logo = [8][]const u8{
+                try std.fmt.allocPrint( // 0
+                    allocator,
+                    "       {s}.{s}       ",
+                    .{ ansi.b, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 1
+                    allocator,
+                    "      {s}/^\\{s}      ",
+                    .{ ansi.b, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 2
+                    allocator,
+                    "     {s}/, ,\\{s}     ",
+                    .{ ansi.b, ansi.x },
+                ),
+                try std.fmt.allocPrint( // 3
+                    allocator,
+                    "    {s}/, {s}{s}v{s}{s} ,\\{s}    ",
+                    .{
+                        ansi.b, ansi.c,
+                        ansi.z, ansi.x,
+                        ansi.b, ansi.x,
+                    },
+                ),
+                try std.fmt.allocPrint( // 4
+                    allocator,
+                    "   {s}/, {s}{s}({s} {s}{s}){s}{s} ,\\{s}   ",
+                    .{
+                        ansi.b, ansi.c, ansi.z,
+                        ansi.x, ansi.c, ansi.z,
+                        ansi.x, ansi.b, ansi.x,
+                    },
+                ),
+                try std.fmt.allocPrint( // 5
+                    allocator,
+                    "  {s}/,{s} {s}>   <{s} {s},\\{s}  ",
+                    .{
+                        ansi.b, ansi.x,
+                        ansi.b, ansi.x,
+                        ansi.b, ansi.x,
+                    },
+                ),
+                try std.fmt.allocPrint( // 6
+                    allocator,
+                    " {s}/.>{s}       {s}<.\\{s} ",
+                    .{
+                        ansi.b, ansi.x,
+                        ansi.b, ansi.x,
+                    },
+                ),
+                try std.fmt.allocPrint( // 7
+                    allocator,
+                    "{s}/>{s}           {s}<\\{s}",
+                    .{
+                        ansi.b, ansi.x,
+                        ansi.b, ansi.x,
+                    },
+                ),
+            },
+        },
+
         .artix => Logo{
             .motif = ansi.b,
             .logo = [8][]const u8{
