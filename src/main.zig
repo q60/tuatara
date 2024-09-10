@@ -8,15 +8,14 @@ const mem = std.mem;
 const fs = std.fs;
 const os = std.os;
 const stdout = std.io.getStdOut().writer();
-const print = stdout.print;
 
 const List = std.ArrayList;
 const Args = res.Args;
 const OsEnum = res.OsEnum;
 
 fn parseArgs(allocator: *mem.Allocator) !Args {
-    const args = try std.process.argsAlloc(allocator);
-    defer std.process.argsFree(allocator, args);
+    const args = try std.process.argsAlloc(allocator.*);
+    defer std.process.argsFree(allocator.*, args);
     var parsed = Args{
         .colors = true,
         .help = false,
@@ -24,7 +23,7 @@ fn parseArgs(allocator: *mem.Allocator) !Args {
         .logo = null,
     };
 
-    for (args) |arg, i| {
+    for (args, 0..) |arg, i| {
         const arg_word = std.mem.trim(u8, arg, "-");
 
         //* Boolean options
@@ -47,7 +46,7 @@ fn parseArgs(allocator: *mem.Allocator) !Args {
         // choose between OS logos
         if (mem.eql(u8, arg_word, "logo") or mem.eql(u8, arg_word, "l")) {
             if (args.len > i + 1) {
-                const os_id = try std.ascii.allocLowerString(allocator, args[i + 1]);
+                const os_id = try std.ascii.allocLowerString(allocator.*, args[i + 1]);
                 defer allocator.free(os_id);
 
                 parsed.logo = std.meta.stringToEnum(OsEnum, os_id) orelse OsEnum.generic;
@@ -59,7 +58,7 @@ fn parseArgs(allocator: *mem.Allocator) !Args {
 
 fn help(colorset: res.Colors) !void {
     const ansi = colorset;
-    try print(
+    try stdout.print(
         \\{s}tuatara is a CLI system information tool written in Zig{s}
         \\
         \\{s}syntax:{s}
@@ -83,16 +82,16 @@ fn help(colorset: res.Colors) !void {
 }
 
 pub fn main() !void {
-    var GPA = std.heap.GeneralPurposeAllocator(.{}){};
-    const gpa = &GPA.allocator;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var alloca = gpa.allocator();
     defer {
-        _ = GPA.deinit();
+        _ = gpa.deinit();
     }
 
     var ansi: res.Colors = res.ansi;
 
     // argv
-    const args = try parseArgs(gpa);
+    const args = try parseArgs(&alloca);
     if (!args.colors) {
         ansi = res.mono;
     }
@@ -102,11 +101,11 @@ pub fn main() !void {
     }
 
     // layers list
-    var info = List([]const []const u8).init(gpa);
+    var info = List([]const []const u8).init(alloca);
     defer {
         for (info.items) |item| {
             for (item) |v| {
-                gpa.free(v);
+                alloca.free(v);
             }
         }
         info.deinit();
@@ -127,134 +126,135 @@ pub fn main() !void {
         };
 
     // user@host layer
-    var home = mem.tokenize(u8, os.getenv("HOME").?, fs.path.sep_str);
+    var home = mem.tokenize(u8, std.posix.getenv("HOME").?, fs.path.sep_str);
     var username: []const u8 = undefined;
     while (true) {
         username = home.next() orelse break;
     }
-    var buf: [os.HOST_NAME_MAX]u8 = undefined;
-    const hostname = try os.gethostname(&buf);
+    var buf: [std.posix.HOST_NAME_MAX]u8 = undefined;
+    const hostname = try std.posix.gethostname(&buf);
 
     // OS layer
-    const os_struct = layers.osname(gpa);
+    const os_struct = layers.osname(&alloca);
     var logo: [8][]const u8 = undefined;
     var motif: []const u8 = undefined;
     defer for (logo) |line| {
-        gpa.free(line);
+        alloca.free(line);
     };
 
     if (os_struct) |os_name| {
-        defer gpa.free(os_name.id);
-        defer gpa.free(os_name.name);
-        const os_name_upper = try std.ascii.allocUpperString(gpa, os_name.name);
+        defer alloca.free(os_name.id);
+        defer alloca.free(os_name.name);
+        const os_name_upper = try std.ascii.allocUpperString(alloca, os_name.name);
 
         try info.append(&[_][]const u8{
             os_name_upper,
-            try gpa.dupe(u8, layer_names[0]),
+            try alloca.dupe(u8, layer_names[0]),
         });
 
         var logo_struct: res.Logo = undefined;
 
         if (args.logo == null) {
-            const os_id = try std.ascii.allocLowerString(gpa, os_name.id);
-            defer gpa.free(os_id);
-            logo_struct = try getlogo(gpa, os_id, ansi);
+            const os_id = try std.ascii.allocLowerString(alloca, os_name.id);
+            defer alloca.free(os_id);
+            logo_struct = try getlogo(&alloca, os_id, ansi);
         } else {
-            logo_struct = try getlogo(gpa, args.logo, ansi);
+            logo_struct = try getlogo(&alloca, args.logo, ansi);
         }
         logo = logo_struct.logo;
         motif = logo_struct.motif;
     } else |_| {}
 
     // kernel layer
-    if (layers.kernel(gpa)) |kernel_ver| {
-        defer gpa.free(kernel_ver);
-        const kernel_ver_upper = try std.ascii.allocUpperString(gpa, kernel_ver);
+    if (layers.kernel(&alloca)) |kernel_ver| {
+        defer alloca.free(kernel_ver);
+        const kernel_ver_upper = try std.ascii.allocUpperString(alloca, kernel_ver);
         try info.append(&[_][]const u8{
             kernel_ver_upper,
-            try gpa.dupe(u8, layer_names[1]),
+            try alloca.dupe(u8, layer_names[1]),
         });
     } else |_| {}
 
     // arch layer
-    const arch = std.meta.tagName(builtin.cpu.arch);
-    const arch_upper = try std.ascii.allocUpperString(gpa, arch);
+    // const arch = std.enums.tagName(std.Target.Cpu.Arch, builtin.cpu.arch);
+    const arch = @tagName(builtin.cpu.arch);
+    const arch_upper = try std.ascii.allocUpperString(alloca, arch);
     try info.append(&[_][]const u8{
         arch_upper,
-        try gpa.dupe(u8, layer_names[2]),
+        try alloca.dupe(u8, layer_names[2]),
     });
 
     // uptime layer
-    if (layers.uptime(gpa)) |uptime| {
-        defer gpa.free(uptime);
-        const uptime_upper = try std.ascii.allocUpperString(gpa, uptime);
+    if (layers.uptime(&alloca)) |uptime| {
+        defer alloca.free(uptime);
+        const uptime_upper = try std.ascii.allocUpperString(alloca, uptime);
         try info.append(&[_][]const u8{
             uptime_upper,
-            try gpa.dupe(u8, layer_names[3]),
+            try alloca.dupe(u8, layer_names[3]),
         });
     } else |_| {}
 
     // shell layer
-    const shell_env = os.getenv("SHELL");
+    const shell_env = std.posix.getenv("SHELL");
     if (shell_env) |shell_exists| {
         var shell = mem.tokenize(u8, shell_exists, fs.path.sep_str);
         var shell_bin: []const u8 = undefined;
         while (true) {
             shell_bin = shell.next() orelse break;
         }
-        const shell_upper = try std.ascii.allocUpperString(gpa, shell_bin);
+        const shell_upper = try std.ascii.allocUpperString(alloca, shell_bin);
         try info.append(&[_][]const u8{
             shell_upper,
-            try gpa.dupe(u8, layer_names[4]),
+            try alloca.dupe(u8, layer_names[4]),
         });
     }
 
     // editor layer
-    const editor_env = os.getenv("EDITOR");
+    const editor_env = std.posix.getenv("EDITOR");
     if (editor_env) |editor_exists| {
         var editor = mem.tokenize(u8, editor_exists, fs.path.sep_str);
         var editor_bin: []const u8 = undefined;
         while (true) {
             editor_bin = editor.next() orelse break;
         }
-        const editor_upper = try std.ascii.allocUpperString(gpa, editor_bin);
+        const editor_upper = try std.ascii.allocUpperString(alloca, editor_bin);
         try info.append(&[_][]const u8{
             editor_upper,
-            try gpa.dupe(u8, layer_names[5]),
+            try alloca.dupe(u8, layer_names[5]),
         });
     }
 
     // browser layer
-    const browser_env = os.getenv("BROWSER");
+    const browser_env = std.posix.getenv("BROWSER");
     if (browser_env) |browser_exists| {
         var browser = mem.tokenize(u8, browser_exists, fs.path.sep_str);
         var browser_bin: []const u8 = undefined;
         while (true) {
             browser_bin = browser.next() orelse break;
         }
-        const browser_upper = try std.ascii.allocUpperString(gpa, browser_bin);
+        const browser_upper = try std.ascii.allocUpperString(alloca, browser_bin);
         try info.append(&[_][]const u8{
             browser_upper,
-            try gpa.dupe(u8, layer_names[6]),
+            try alloca.dupe(u8, layer_names[6]),
         });
     }
 
     // getting length of the longest layer
     var max_length: usize = 0;
     for (info.items) |layer| {
-        var current_len = layer[0].len;
+        const current_len = layer[0].len;
         if (current_len > max_length) {
             max_length = layer[0].len;
         }
     }
 
     // try print out user@host
-    const user_indent = try indented(gpa, max_length - username.len + 1);
-    defer gpa.free(user_indent);
-    try print("  {s}", .{
+    const user_indent = try indented(&alloca, max_length - username.len + 1);
+    defer alloca.free(user_indent);
+    try stdout.print("  {s}", .{
         logo[0],
     });
-    try print("{s}{s}{s}{s}{s} @ {s}{s}{s}{s}\n", .{
+    try stdout.print("{s}{s}{s}{s}{s} @ {s}{s}{s}{s}\n", .{
         user_indent, motif,
         ansi.z,      username,
         ansi.x,      motif,
@@ -263,25 +263,25 @@ pub fn main() !void {
     });
 
     // try print layers
-    for (logo[1..]) |logo_line, index| {
-        try print("  {s}", .{
+    for (logo[1..], 0..) |logo_line, index| {
+        try stdout.print("  {s}", .{
             logo_line,
         });
         if (index < (info.items.len)) {
             const info_layer = info.items[index][0];
             const layer_name = info.items[index][1];
-            const layer_indent = try indented(gpa, max_length - info_layer.len + 1);
-            defer gpa.free(layer_indent);
-            try print("{s}{s}", .{
+            const layer_indent = try indented(&alloca, max_length - info_layer.len + 1);
+            defer alloca.free(layer_indent);
+            try stdout.print("{s}{s}", .{
                 layer_indent,
                 info_layer,
             });
-            try print("{s}{s}{s}{s}\n", .{
+            try stdout.print("{s}{s}{s}{s}\n", .{
                 motif,      ansi.z,
                 layer_name, ansi.x,
             });
         } else {
-            try print("\n", .{});
+            try stdout.print("\n", .{});
         }
     }
 }

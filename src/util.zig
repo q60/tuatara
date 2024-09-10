@@ -7,14 +7,14 @@ const List = std.ArrayList;
 pub fn fileExists(absolute_path: []const u8) bool {
     const file = fs.openFileAbsolute(
         absolute_path,
-        .{ .read = true },
+        .{ .mode = .read_only },
     ) catch return false;
     file.close();
     return true;
 }
 
 pub fn rightAlign(allocator: *mem.Allocator, maxlen: usize) ![]const u8 {
-    var indent = List(u8).init(allocator);
+    var indent = List(u8).init(allocator.*);
     defer indent.deinit();
 
     var i: usize = 0;
